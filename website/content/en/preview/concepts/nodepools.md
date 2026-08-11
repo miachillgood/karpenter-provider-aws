@@ -123,8 +123,9 @@ spec:
   disruption:
     # Describes which types of Nodes Karpenter should consider for consolidation
     # If using 'WhenEmptyOrUnderutilized', Karpenter will consider all nodes for consolidation and attempt to remove or replace Nodes when it discovers that the Node is empty or underutilized and could be changed to reduce cost
+    # If using 'Balanced', Karpenter considers the same nodes as 'WhenEmptyOrUnderutilized' but only consolidates when the estimated savings are worth the disruption to running pods
     # If using `WhenEmpty`, Karpenter will only consider nodes for consolidation that contain no workload pods
-    consolidationPolicy: WhenEmptyOrUnderutilized | WhenEmpty
+    consolidationPolicy: WhenEmptyOrUnderutilized | Balanced | WhenEmpty
 
     # The amount of time Karpenter should wait to consolidate a node after a pod has been added or removed from the node.
     # You can choose to disable consolidation entirely by setting the string value 'Never' here
@@ -299,7 +300,7 @@ There is currently a limit of 100 on the total number of requirements on both th
 Along with the combination of [key,operator,values] in the requirements, Karpenter also supports `minValues` in the NodePool requirements block, allowing the scheduler to be aware of user-specified flexibility minimums while scheduling pods to a cluster. Depending on the policy configured via the flag `--min-values-policy` or environment variable `MIN_VALUES_POLICY`, if Karpenter cannot meet this minimum flexibility for each key when scheduling a pod, it will either fail the scheduling loop for that NodePool, either falling back to another NodePool which meets the pod requirements or failing scheduling the pod altogether (when policy is set to `Strict`) or relax `minValues` until they can be met (when policy is set to `BestEffort`).
 
 For spot instances, you should specify `karpenter.sh/capacity-type: spot` in your requirements. For example, the below spec will use spot instance type for all provisioned instances and enforces `minValues` to various keys where it is defined
-i.e at least 2 unique instance families from [c,m,r], 5 unique instance families [eg: "m5","m5d","r4","c5","c5d","c4" etc], 10 unique instance types [eg: "c5.2xlarge","c4.xlarge" etc] is required for scheduling the pods.
+i.e at least 2 unique instance categories from [c,m,r], 5 unique instance families [eg: "m5","m5d","r4","c5","c5d","c4" etc], 10 unique instance types [eg: "c5.2xlarge","c4.xlarge" etc] are required for scheduling the pods.
 
 ```yaml
 spec:
@@ -458,6 +459,7 @@ Review the [Kubernetes core API](https://github.com/kubernetes/api/blob/37748cca
 ## spec.weight
 
 Karpenter allows you to describe NodePool preferences through a `weight` mechanism similar to how weight is described with [pod and node affinities](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
+Valid values for `weight` range from `0` to `100`. If `weight` is not specified, Karpenter treats it as `0`.
 
 For more information on weighting NodePools, see the [Weighted NodePools section]({{<ref "scheduling#weighted-nodepools" >}}) in the scheduling docs.
 
